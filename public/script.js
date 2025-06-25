@@ -1,8 +1,9 @@
 function $(id) { return document.getElementById(id); }
 
 function splitKeywords(text) {
-  return text.split(/[,\n]/).map(k => k.trim()).filter(k => k);
+  return text.split(/[\n,]/).map(k => k.trim()).filter(k => k);
 }
+
 
 function highlightContent(content, keywords) {
   let highlighted = content;
@@ -41,25 +42,68 @@ function displayResults(keywords, content) {
   $('highlighted').innerHTML = highlightContent(content, keywords);
 }
 
+function readHistory() {
+  const data = localStorage.getItem('history');
+  try {
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeHistory(history) {
+  localStorage.setItem('history', JSON.stringify(history));
+}
+
+function loadHistory() {
+  const items = readHistory();
+  $('history').innerHTML = '';
+  items.forEach(addHistoryItem);
+}
+
 $('checkBtn').addEventListener('click', () => {
   const title = $('title').value.trim();
   const keywords = splitKeywords($('keywords').value);
   const content = $('content').value;
   displayResults(keywords, content);
-  fetch('/save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, keywords, content, timestamp: Date.now() })
-  }).then(() => loadHistory());
+  const history = readHistory();
+  history.push({ title, keywords, content, timestamp: Date.now() });
+  writeHistory(history);
+  loadHistory();
 });
 
-function loadHistory() {
-  fetch('/data')
-    .then(r => r.json())
-    .then(items => {
-      $('history').innerHTML = '';
-      items.forEach(addHistoryItem);
-    });
-}
+$('exportBtn').addEventListener('click', () => {
+  const history = readHistory();
+  const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'data.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+$('importBtn').addEventListener('click', () => $('importFile').click());
+
+$('importFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (Array.isArray(data)) {
+          writeHistory(data);
+          loadHistory();
+        } else {
+          alert('Invalid file');
+        }
+      } catch {
+        alert('Invalid file');
+      }
+    };
+    reader.readAsText(file);
+  }
+  e.target.value = '';
+});
 
 document.addEventListener('DOMContentLoaded', loadHistory);

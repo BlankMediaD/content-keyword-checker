@@ -29,6 +29,11 @@
     <div id="highlighted" class="p-2 border bg-white" style="min-height:150px"></div>
   </div>
   <button id="checkBtn" class="btn btn-primary mb-3">Check &amp; Save</button>
+  <div class="mb-3">
+    <button id="exportBtn" class="btn btn-secondary me-2">Export History</button>
+    <input type="file" id="importFile" accept="application/json" hidden>
+    <button id="importBtn" class="btn btn-secondary">Import History</button>
+  </div>
   <h3>Results</h3>
   <ul id="resultList" class="list-group mb-4"></ul>
   <h3>Previous Checks</h3>
